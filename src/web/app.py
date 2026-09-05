@@ -16,6 +16,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 
 from recon import config, decisions as dec, load, mappings
 from recon.decisions import DecisionSet
@@ -30,9 +31,34 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 # themselves.
 templates.env.filters["money"] = lambda value: f"{abs(float(value or 0)):,.2f}"
 templates.env.filters["count"] = lambda value: f"{int(value):,}"
-# Plain Jinja2 (unlike Flask) has no tojson filter; needed to hand the
-# account option list to the searchable combobox's JS as a JSON literal.
-templates.env.filters["tojson"] = json.dumps
+# Plain Jinja2 (unlike Flask) has no tojson filter. Two variants, because a
+# JSON literal needs opposite escaping depending on where it lands:
+#
+# - Inside a <script> block, entities are never decoded (it's raw text, not
+#   HTML), so escaping a quote there is a silent syntax error. `tojson` is
+#   Markup-wrapped, like Flask's own tojson, so autoescape leaves it alone.
+# - Inside an HTML attribute (e.g. a data-* attribute holding JSON), normal
+#   escaping is exactly what's needed: an apostrophe in the data must not be
+#   allowed to close a single-quoted attribute early. `json_attr` is a plain
+#   string, so autoescape still applies to it.
+templates.env.filters["tojson"] = lambda value: Markup(json.dumps(value))
+templates.env.filters["json_attr"] = json.dumps
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> HTMLResponse:
+    """Render errors as a page in the app's own design, not FastAPI's raw JSON.
+
+    A fund manager who mis-uploads a file or follows a stale link should see
+    something legible, not a {"detail": "..."} blob.
+    """
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {"status_code": exc.status_code, "detail": exc.detail},
+        status_code=exc.status_code,
+    )
+
 
 # Single in-memory scan result. This is a one-operator review tool, not a
 # multi-user service, so there is deliberately no session or database layer:
@@ -109,4 +135,24 @@ async def decision_detail(request: Request, decision_id: str) -> HTMLResponse:
             status_code=404, detail=f"No decision '{decision_id}' in the current scan"
         )
 
-    return templates.TemplateResponse(request, "decision.html", {"d": match})
+    # Prev/next stay within the same priority group: walking the 5 blocking
+    # decisions in order is the actual workflow; jumping into deferred mid
+    # sequence would be a surprising, not a helpful, shortcut.
+    group = (
+        _last_scan.blocking if match.priority == dec.Priority.BLOCKING else _last_scan.deferred
+    )
+    position = group.index(match) + 1
+    prev_id = group[position - 2].id if position > 1 else None
+    next_id = group[position].id if position < len(group) else None
+
+    return templates.TemplateResponse(
+        request,
+        "decision.html",
+        {
+            "d": match,
+            "position": position,
+            "group_total": len(group),
+            "prev_id": prev_id,
+            "next_id": next_id,
+        },
+    )

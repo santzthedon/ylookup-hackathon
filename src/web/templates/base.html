@@ -4,9 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Migration decision review{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Reserved for the things this tool exists to show: the question being
+       asked and the figures behind it. Everything else (labels, nav, chrome)
+       stays in the system sans, so the serif reads as a deliberate signal
+       rather than a whole-page skin. */
+    .font-serif-display {
+      font-family: "Source Serif 4", Georgia, Cambria, "Times New Roman", Times, serif;
+      font-optical-sizing: auto;
+    }
+  </style>
 </head>
 <body>
-  {% block content %}{% endblock %}
+  <div class="min-h-screen bg-[#FAFAF8] text-[#171717] font-sans antialiased flex flex-col">
+    <header class="border-b border-[#E4E4DF] shrink-0">
+      <div class="max-w-7xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
+        <a href="/" class="text-sm font-semibold tracking-tight hover:text-[#6B6B63] transition-colors">
+          Migration decision review
+        </a>
+        <div class="flex items-center gap-4">{% block header_right %}{% endblock %}</div>
+      </div>
+    </header>
+    <main class="flex-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </body>
 </html>

@@ -1,50 +1,74 @@
 {% extends "base.html" %}
 {% block title %}Upload workbooks — migration decision review{% endblock %}
 {% block content %}
-<h1>Migration decision review</h1>
-<p>Upload the source general ledger and the verified loader workbook to find every decision this migration needs, in one pass.</p>
+<div class="max-w-xl mx-auto px-6 sm:px-8 py-14 sm:py-20">
 
-<form method="post" action="/scan" enctype="multipart/form-data">
-  <div>
-    <p>Source general ledger (.xlsx)</p>
-    <div class="dropzone" data-target="source_gl">Drag and drop the file here, or click to choose</div>
-    <input type="file" id="source_gl" name="source_gl" accept=".xlsx" required hidden>
-  </div>
+  <h1 class="font-serif-display text-2xl font-semibold tracking-tight mb-2">Upload workbooks</h1>
+  <p class="text-[15px] leading-relaxed text-[#6B6B63] mb-12">
+    Upload the source general ledger and the verified loader workbook to find every decision this migration needs, in one pass.
+  </p>
 
-  <div>
-    <p>Verified loader / mapping workbook (.xlsx)</p>
-    <div class="dropzone" data-target="loader">Drag and drop the file here, or click to choose</div>
-    <input type="file" id="loader" name="loader" accept=".xlsx" required hidden>
-  </div>
+  <form method="post" action="/scan" enctype="multipart/form-data" class="space-y-6">
+    <div>
+      <p class="text-sm font-medium mb-2">Source general ledger</p>
+      <div class="dropzone relative border border-dashed border-[#D0D0C9] hover:border-[#171717] focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717] transition-colors">
+        <input
+          type="file" id="source_gl" name="source_gl" accept=".xlsx" required
+          class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
+        <label id="source_gl-label" for="source_gl" class="pointer-events-none block px-6 py-10 text-center text-sm text-[#6B6B63]">
+          Drag and drop the .xlsx file here, or click to choose
+        </label>
+      </div>
+    </div>
 
-  <button type="submit">Scan</button>
-</form>
+    <div>
+      <p class="text-sm font-medium mb-2">Verified loader / mapping workbook</p>
+      <div class="dropzone relative border border-dashed border-[#D0D0C9] hover:border-[#171717] focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717] transition-colors">
+        <input
+          type="file" id="loader" name="loader" accept=".xlsx" required
+          class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
+        <label id="loader-label" for="loader" class="pointer-events-none block px-6 py-10 text-center text-sm text-[#6B6B63]">
+          Drag and drop the .xlsx file here, or click to choose
+        </label>
+      </div>
+    </div>
+
+    <button type="submit" id="scan-button"
+      class="w-full sm:w-auto border border-[#171717] bg-[#171717] px-6 py-3 text-sm font-medium text-white hover:bg-[#000] transition-colors disabled:opacity-60">
+      Scan
+    </button>
+    <p id="scan-status" hidden class="text-sm text-[#6B6B63]">
+      Reading both workbooks — this can take a few seconds for a large ledger.
+    </p>
+  </form>
+
+</div>
 
 <script>
-  document.querySelectorAll(".dropzone").forEach(function (zone) {
-    var input = document.getElementById(zone.dataset.target);
-
-    zone.addEventListener("click", function () {
-      input.click();
-    });
-
-    zone.addEventListener("dragover", function (event) {
-      event.preventDefault();
-    });
-
-    zone.addEventListener("drop", function (event) {
-      event.preventDefault();
-      if (event.dataTransfer.files.length) {
-        input.files = event.dataTransfer.files;
-        zone.textContent = event.dataTransfer.files[0].name;
-      }
-    });
-
+  // Dropping a file directly onto a native <input type="file"> already works
+  // in every evergreen browser and sets .files itself — no custom drag/drop
+  // handling needed. This only updates the visible label after a choice,
+  // whichever way it was made (click, keyboard, or drop).
+  document.querySelectorAll('input[type="file"]').forEach(function (input) {
+    var label = document.getElementById(input.id + "-label");
+    var zone = input.closest(".dropzone");
     input.addEventListener("change", function () {
       if (input.files.length) {
-        zone.textContent = input.files[0].name;
+        label.textContent = input.files[0].name;
+        zone.classList.remove("border-dashed");
+        zone.classList.add("border-solid");
       }
     });
+  });
+
+  // Parsing two real workbooks isn't instant. Give immediate feedback on
+  // submit so the click doesn't look like it did nothing while the browser
+  // waits for the response — native form submission still proceeds as normal.
+  document.querySelector("form").addEventListener("submit", function () {
+    var button = document.getElementById("scan-button");
+    button.disabled = true;
+    button.textContent = "Scanning…";
+    document.getElementById("scan-status").hidden = false;
   });
 </script>
 {% endblock %}

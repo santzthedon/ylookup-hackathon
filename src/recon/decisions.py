@@ -40,9 +40,11 @@ log = logging.getLogger(__name__)
 
 C = config.COLS
 
-# How many example ledger rows to attach to a decision. Enough to see the
-# pattern, few enough to read on one screen.
-EVIDENCE_ROWS = 5
+# How many example ledger rows to attach to a decision. Most decisions in
+# practice affect fewer than this many rows, so it shows everything; the
+# `row_count` field still carries the true total for the rare decision with
+# more, so the UI can say "showing 25 of 9,537" rather than imply completeness.
+EVIDENCE_ROWS = 25
 
 
 # --------------------------------------------------------------------------

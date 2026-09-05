@@ -1,81 +1,154 @@
 {% extends "base.html" %}
 {% block title %}Scan results — migration decision review{% endblock %}
+
+{% block header_right %}
+<button type="button" id="export-answers" hidden
+  class="shrink-0 border border-[#E4E4DF] px-4 py-2 text-sm text-[#171717] hover:bg-[#F4F3ED] transition-colors">
+  Export answers
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-[#FAFAF8] text-[#171717] font-sans antialiased">
-  <div class="max-w-4xl mx-auto px-8 py-14">
+<div class="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 overflow-x-hidden">
 
-    <header class="mb-12">
-      <h1 class="text-xl font-semibold tracking-tight">Migration decision review</h1>
-      <p class="mt-1 text-sm text-[#6B6B63]">Every decision found in one pass over the source data.</p>
-    </header>
+  <header class="mb-10 sm:mb-12">
+    <h1 class="font-serif-display text-2xl font-semibold tracking-tight">Scan results</h1>
+    <p class="mt-1 text-sm text-[#6B6B63]">Every decision found in one pass over the source data.</p>
+  </header>
 
-    <div class="grid grid-cols-4 border-t border-b border-[#E4E4DF] divide-x divide-[#E4E4DF] mb-16">
-      <div class="py-6 px-6 text-right">
-        <div class="text-3xl font-semibold tabular-nums text-[#9A3412]">{{ summary.blocking|count }}</div>
-        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Blocking</div>
-      </div>
-      <div class="py-6 px-6 text-right">
-        <div class="text-3xl font-semibold tabular-nums">{{ summary.deferred|count }}</div>
-        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Can wait</div>
-      </div>
-      <div class="py-6 px-6 text-right">
-        <div class="text-3xl font-semibold tabular-nums">{{ summary.rows_blocked|count }}</div>
-        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Transactions held up</div>
-      </div>
-      <div class="py-6 px-6 text-right">
-        <div class="text-3xl font-semibold tabular-nums">{{ summary.value_blocked|money }}</div>
-        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Value held up</div>
-      </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-[#E4E4DF] divide-y sm:divide-y-0 lg:divide-x divide-[#E4E4DF] mb-12 sm:mb-16">
+    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+      <div class="font-serif-display text-xl font-semibold tabular-nums text-[#9A3412]">{{ summary.blocking|count }}</div>
+      <div class="text-xs text-[#6B6B63] sm:mt-1">Blocking</div>
     </div>
+    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ summary.deferred|count }}</div>
+      <div class="text-xs text-[#6B6B63] sm:mt-1">Can wait</div>
+    </div>
+    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ summary.rows_blocked|count }}</div>
+      <div class="text-xs text-[#6B6B63] sm:mt-1">Transactions held up</div>
+    </div>
+    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ summary.value_blocked|money }}</div>
+      <div class="text-xs text-[#6B6B63] sm:mt-1">Value held up</div>
+    </div>
+  </div>
 
-    <section class="mb-16">
-      <h2 class="text-xs font-semibold uppercase tracking-wide text-[#171717] mb-4">
-        Blocking — answer these before anything is loaded
-      </h2>
+  <section class="mb-16">
+    <h2 class="text-sm font-semibold text-[#171717] mb-1">
+      Blocking — answer these before anything is loaded
+    </h2>
+    <p id="answer-progress" hidden class="text-xs text-[#6B6B63] mb-4"></p>
+    {% if not blocking %}<div class="mb-4"></div>{% endif %}
 
-      {% if blocking %}
-      <div class="space-y-3">
-        {% for d in blocking %}
+    {% if blocking %}
+    <div id="blocking-cards" class="space-y-3">
+      {% for d in blocking %}
+      <a href="/decision/{{ d.id }}" data-decision-id="{{ d.id }}"
+         class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#F4F3ED] transition-colors">
+        <p class="text-[15px] leading-snug text-[#171717]">{{ d.question }}</p>
+        <div class="shrink-0 text-left sm:text-right">
+          <div class="font-serif-display tabular-nums text-lg font-medium leading-tight">{{ d.amount_display }}</div>
+          <div class="mt-0.5 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
+          <div class="answered-tag mt-0.5 text-xs text-[#6B6B63]" hidden>Answered</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-[#6B6B63]">Nothing is blocking.</p>
+    {% endif %}
+  </section>
+
+  {% if deferred %}
+  <section>
+    <details class="border-t border-[#E4E4DF] pt-4">
+      <summary class="cursor-pointer select-none text-sm font-semibold text-[#171717]">
+        {{ deferred|length }} gaps that can wait
+      </summary>
+      <div class="mt-4 divide-y divide-[#EDEDE8]">
+        {% for d in deferred %}
         <a href="/decision/{{ d.id }}"
-           class="flex items-baseline justify-between gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-6 py-5 hover:bg-[#F4F3ED] transition-colors">
-          <p class="text-[15px] leading-snug text-[#171717]">{{ d.question }}</p>
-          <div class="shrink-0 text-right">
-            <div class="tabular-nums text-lg font-medium leading-tight">{{ d.amount_display }}</div>
-            <div class="mt-0.5 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
-          </div>
+           class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-8 py-3 px-2 -mx-2 hover:bg-[#F4F3ED]">
+          <p class="text-sm text-[#3D3D38]">{{ d.question }}</p>
+          <div class="shrink-0 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
         </a>
         {% endfor %}
       </div>
-      {% else %}
-      <p class="text-sm text-[#6B6B63]">Nothing is blocking.</p>
-      {% endif %}
-    </section>
+    </details>
+  </section>
+  {% endif %}
 
-    {% if deferred %}
-    <section>
-      <details class="border-t border-[#E4E4DF] pt-4">
-        <summary class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-[#171717]">
-          {{ deferred|length }} gaps that can wait
-        </summary>
-        <div class="mt-4 divide-y divide-[#EDEDE8]">
-          {% for d in deferred %}
-          <a href="/decision/{{ d.id }}"
-             class="flex items-baseline justify-between gap-8 py-3 px-2 -mx-2 hover:bg-[#F4F3ED]">
-            <p class="text-sm text-[#3D3D38]">{{ d.question }}</p>
-            <div class="shrink-0 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
-          </a>
-          {% endfor %}
-        </div>
-      </details>
-    </section>
-    {% endif %}
+  <p class="mt-16 text-sm">
+    <a href="/" class="text-[#6B6B63] hover:text-[#171717] underline underline-offset-2">
+      Scan another pair of workbooks
+    </a>
+  </p>
 
-    <p class="mt-16 text-sm">
-      <a href="/" class="text-[#6B6B63] hover:text-[#171717] underline underline-offset-2">
-        Scan another pair of workbooks
-      </a>
-    </p>
-
-  </div>
 </div>
+
+<script>
+  // Answers are saved client side from the decision page (see decision.html) —
+  // there is no backend to read progress from, so this reads the same
+  // browser-local store to show progress and build the export.
+  (function () {
+    var STORAGE_KEY = "ylookup_answers";
+    var answers = {};
+    try {
+      answers = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    } catch (e) {
+      answers = {};
+    }
+
+    var cards = document.querySelectorAll("#blocking-cards [data-decision-id]");
+    var answeredCount = 0;
+    cards.forEach(function (card) {
+      if (answers[card.dataset.decisionId]) {
+        answeredCount++;
+        var tag = card.querySelector(".answered-tag");
+        if (tag) tag.hidden = false;
+      }
+    });
+
+    var progress = document.getElementById("answer-progress");
+    if (progress && cards.length) {
+      progress.textContent = answeredCount + " of " + cards.length + " answered";
+      progress.hidden = false;
+    }
+
+    var exportButton = document.getElementById("export-answers");
+    var answerCount = Object.keys(answers).length;
+    if (exportButton && answerCount > 0) {
+      exportButton.hidden = false;
+      exportButton.textContent = "Export " + answerCount + " answer" + (answerCount === 1 ? "" : "s");
+      exportButton.addEventListener("click", function () {
+        var rows = [["id", "priority", "question", "answer", "saved_at"]];
+        Object.keys(answers).forEach(function (id) {
+          var a = answers[id];
+          rows.push([id, a.priority || "", a.question || "", a.answer || "", a.savedAt || ""]);
+        });
+        var csv = rows
+          .map(function (row) {
+            return row
+              .map(function (cell) {
+                return '"' + String(cell).replace(/"/g, '""') + '"';
+              })
+              .join(",");
+          })
+          .join("\n");
+
+        var blob = new Blob([csv], { type: "text/csv" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = "migration-decisions-answers.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    }
+  })();
+</script>
 {% endblock %}
