@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ d.id }} — migration decision review{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-[#FAFAF8] text-[#171717] font-sans antialiased">
+  <div class="max-w-7xl mx-auto px-8 py-14">
+
+   <div class="max-w-3xl">
+    <p class="mb-10 text-sm">
+      <a href="/" class="text-[#6B6B63] hover:text-[#171717] underline underline-offset-2">Back to results</a>
+    </p>
+
+    <div class="mb-5 flex items-center gap-2">
+      <span class="text-xs font-semibold uppercase tracking-wide {{ 'text-[#9A3412]' if d.priority == 'blocking' else 'text-[#6B6B63]' }}">
+        {{ 'Blocking' if d.priority == 'blocking' else 'Can wait' }}
+      </span>
+      <span class="text-xs text-[#6B6B63]">· {{ d.id }}</span>
+    </div>
+
+    <h1 class="text-2xl font-semibold leading-snug tracking-tight mb-6">{{ d.question }}</h1>
+
+    <p class="text-[15px] leading-relaxed text-[#3D3D38] mb-8">{{ d.detail }}</p>
+
+    <div class="mb-10 border-l-2 border-[#E4E4DF] pl-5">
+      <p class="text-xs font-semibold uppercase tracking-wide text-[#6B6B63] mb-1">Why it matters</p>
+      <p class="text-[15px] leading-relaxed text-[#3D3D38]">{{ d.why_it_matters }}</p>
+    </div>
+   </div>
+
+    <div class="grid grid-cols-3 max-w-3xl border-t border-b border-[#E4E4DF] divide-x divide-[#E4E4DF] mb-12">
+      <div class="py-5 px-6 text-right">
+        <div class="text-xl font-semibold tabular-nums">{{ d.amount_display }}</div>
+        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Amount</div>
+      </div>
+      <div class="py-5 px-6 text-right">
+        <div class="text-xl font-semibold tabular-nums">{{ d.row_count|count }}</div>
+        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Transactions</div>
+      </div>
+      <div class="py-5 px-6 text-right">
+        <div class="text-xl font-semibold tabular-nums">{{ d.entities_affected|count }}</div>
+        <div class="mt-1 text-xs uppercase tracking-wide text-[#6B6B63]">Funds affected</div>
+      </div>
+    </div>
+
+    <section class="mb-12">
+      <h2 class="text-xs font-semibold uppercase tracking-wide mb-4">Evidence</h2>
+      {% if d.evidence %}
+      <div class="overflow-x-auto border border-[#E4E4DF]">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-[#F4F3ED] border-b border-[#E4E4DF]">
+              {% for key, value in d.evidence[0].items() %}
+              <th class="px-3 py-3 max-w-[9rem] truncate font-semibold uppercase tracking-wide text-xs text-[#6B6B63] {{ 'text-right' if value is number else 'text-left' }}"
+                  title="{{ key }}">
+                {{ key }}
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in d.evidence %}
+            <tr class="border-b border-[#EDEDE8] last:border-b-0">
+              {% for key, value in row.items() %}
+              <td class="px-3 py-3 max-w-[9rem] truncate {{ 'text-right tabular-nums' if value is number else 'text-left' }}"
+                  title="{{ value|money if value is number else value }}">
+                {{ value|money if value is number else value }}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-[#6B6B63]">No evidence rows attached.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2 class="text-xs font-semibold uppercase tracking-wide mb-4">Answer</h2>
+
+      {% if d.answer_type == "choose_account" %}
+      <div class="combobox relative max-w-md" data-options='{{ d.options|tojson }}'>
+        <input
+          type="text"
+          class="combobox-input w-full border border-[#E4E4DF] px-4 py-3 text-[15px] bg-white focus:outline-none focus:border-[#171717]"
+          placeholder="Search {{ d.options|length }} accounts…"
+          autocomplete="off">
+        <input type="hidden" name="answer">
+        <div class="combobox-list hidden absolute z-10 mt-1 w-full max-h-72 overflow-y-auto border border-[#E4E4DF] bg-white"></div>
+      </div>
+      {% else %}
+      <div class="space-y-2 max-w-md">
+        {% for option in d.options %}
+        <label class="flex items-center gap-3 border border-[#E4E4DF] px-4 py-3 cursor-pointer hover:bg-[#F4F3ED]">
+          <input type="radio" name="answer" value="{{ option }}">
+          <span class="text-[15px]">{{ option }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <button type="button" disabled
+        class="mt-6 border border-[#E4E4DF] px-5 py-2.5 text-sm text-[#6B6B63] cursor-not-allowed">
+        Submit answer (not yet wired up)
+      </button>
+    </section>
+
+    <script>
+      document.querySelectorAll(".combobox").forEach(function (box) {
+        var options = JSON.parse(box.dataset.options);
+        var input = box.querySelector(".combobox-input");
+        var hidden = box.querySelector('input[type="hidden"]');
+        var list = box.querySelector(".combobox-list");
+
+        function render(filtered) {
+          list.innerHTML = "";
+          filtered.slice(0, 50).forEach(function (opt) {
+            var item = document.createElement("div");
+            item.className = "px-4 py-2 text-[15px] cursor-pointer hover:bg-[#F4F3ED]";
+            item.textContent = opt;
+            item.addEventListener("mousedown", function (event) {
+              event.preventDefault();
+              input.value = opt;
+              hidden.value = opt;
+              list.classList.add("hidden");
+            });
+            list.appendChild(item);
+          });
+          list.classList.toggle("hidden", filtered.length === 0);
+        }
+
+        function matching() {
+          var term = input.value.toLowerCase();
+          return options.filter(function (opt) {
+            return opt.toLowerCase().indexOf(term) !== -1;
+          });
+        }
+
+        input.addEventListener("input", function () {
+          hidden.value = "";
+          render(matching());
+        });
+
+        input.addEventListener("focus", function () {
+          render(matching());
+        });
+
+        input.addEventListener("blur", function () {
+          setTimeout(function () { list.classList.add("hidden"); }, 100);
+        });
+      });
+    </script>
+
+  </div>
+</div>
+{% endblock %}

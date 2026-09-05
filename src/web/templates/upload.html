@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Upload workbooks — migration decision review{% endblock %}
+{% block content %}
+<h1>Migration decision review</h1>
+<p>Upload the source general ledger and the verified loader workbook to find every decision this migration needs, in one pass.</p>
+
+<form method="post" action="/scan" enctype="multipart/form-data">
+  <div>
+    <p>Source general ledger (.xlsx)</p>
+    <div class="dropzone" data-target="source_gl">Drag and drop the file here, or click to choose</div>
+    <input type="file" id="source_gl" name="source_gl" accept=".xlsx" required hidden>
+  </div>
+
+  <div>
+    <p>Verified loader / mapping workbook (.xlsx)</p>
+    <div class="dropzone" data-target="loader">Drag and drop the file here, or click to choose</div>
+    <input type="file" id="loader" name="loader" accept=".xlsx" required hidden>
+  </div>
+
+  <button type="submit">Scan</button>
+</form>
+
+<script>
+  document.querySelectorAll(".dropzone").forEach(function (zone) {
+    var input = document.getElementById(zone.dataset.target);
+
+    zone.addEventListener("click", function () {
+      input.click();
+    });
+
+    zone.addEventListener("dragover", function (event) {
+      event.preventDefault();
+    });
+
+    zone.addEventListener("drop", function (event) {
+      event.preventDefault();
+      if (event.dataTransfer.files.length) {
+        input.files = event.dataTransfer.files;
+        zone.textContent = event.dataTransfer.files[0].name;
+      }
+    });
+
+    input.addEventListener("change", function () {
+      if (input.files.length) {
+        zone.textContent = input.files[0].name;
+      }
+    });
+  });
+</script>
+{% endblock %}
