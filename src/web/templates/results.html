@@ -3,7 +3,7 @@
 
 {% block header_right %}
 <button type="button" id="export-answers" hidden
-  class="shrink-0 border border-[#E4E4DF] px-4 py-2 text-sm text-[#171717] hover:bg-[#F4F3ED] transition-colors">
+  class="shrink-0 border border-[#E9E2B9] px-4 py-2 text-sm text-[#0E100F] hover:bg-[#FFF6C7] transition-colors">
   Export answers
 </button>
 {% endblock %}
@@ -37,71 +37,71 @@
   <header class="mb-10 sm:mb-12">
     <h1 id="page-title" class="font-serif-display text-2xl font-semibold tracking-tight inline-block">Scan results</h1>
     <svg width="130" height="10" viewBox="0 0 130 10" fill="none" class="block mt-1" aria-hidden="true">
-      <path id="title-underline" d="M2 5 Q 65 9 128 5" stroke="#9A3412" stroke-width="2" stroke-linecap="round"/>
+      <path id="title-underline" d="M2 5 Q 65 9 128 5" stroke="#0B7A2C" stroke-width="2" stroke-linecap="round"/>
     </svg>
-    <p class="mt-2 text-sm text-[#6B6B63]">Every decision found in one pass over the source data.</p>
+    <p class="mt-2 text-sm text-[#726C4E]">Every decision found in one pass over the source data.</p>
   </header>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-[#E4E4DF] divide-y sm:divide-y-0 lg:divide-x divide-[#E4E4DF] mb-12 sm:mb-16">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-[#E9E2B9] divide-y sm:divide-y-0 lg:divide-x divide-[#E9E2B9] mb-12 sm:mb-16">
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums text-[#9A3412]" data-count-value="{{ summary.blocking }}">{{ summary.blocking|count }}</div>
-      <div class="text-xs text-[#6B6B63] sm:mt-1">Blocking</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums text-[#0B7A2C]" data-count-value="{{ summary.blocking }}">{{ summary.blocking|count }}</div>
+      <div class="text-xs text-[#726C4E] sm:mt-1">Blocking</div>
     </div>
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.deferred }}">{{ summary.deferred|count }}</div>
-      <div class="text-xs text-[#6B6B63] sm:mt-1">Can wait</div>
+      <div class="text-xs text-[#726C4E] sm:mt-1">Can wait</div>
     </div>
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.rows_blocked }}">{{ summary.rows_blocked|count }}</div>
-      <div class="text-xs text-[#6B6B63] sm:mt-1">Transactions held up</div>
+      <div class="text-xs text-[#726C4E] sm:mt-1">Transactions held up</div>
     </div>
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.value_blocked }}" data-count-decimals="2">{{ summary.value_blocked|money }}</div>
-      <div class="text-xs text-[#6B6B63] sm:mt-1">Value held up</div>
+      <div class="text-xs text-[#726C4E] sm:mt-1">Value held up</div>
     </div>
   </div>
 
   <section class="mb-16">
-    <h2 class="text-sm font-semibold text-[#171717] mb-1">
+    <h2 class="text-sm font-semibold text-[#0E100F] mb-1">
       Blocking — answer these before anything is loaded
     </h2>
-    <p id="answer-progress" hidden class="text-xs text-[#6B6B63] mb-4"></p>
+    <p id="answer-progress" hidden class="text-xs text-[#726C4E] mb-4"></p>
     {% if not blocking %}<div class="mb-4"></div>{% endif %}
 
     {% if blocking %}
     <div id="blocking-cards" class="space-y-3">
       {% for d in blocking %}
       <a href="/decision/{{ d.id }}" data-decision-id="{{ d.id }}"
-         class="reveal-card card-lift flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#F4F3ED] transition-colors">
-        <p class="text-[15px] leading-snug text-[#171717]">{{ d.question }}</p>
+         class="reveal-card card-lift flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E9E2B9] border-l-2 border-l-[#0B7A2C] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#FFF6C7] transition-colors">
+        <p class="text-[15px] leading-snug text-[#0E100F]">{{ d.question }}</p>
         <div class="shrink-0 text-left sm:text-right">
           <div class="font-serif-display tabular-nums text-lg font-medium leading-tight">{{ d.amount_display }}</div>
-          <div class="mt-0.5 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
-          <div class="answered-tag mt-0.5 text-xs text-[#6B6B63]" hidden>Answered</div>
+          <div class="mt-0.5 text-xs tabular-nums text-[#726C4E]">{{ d.row_count|count }} transactions</div>
+          <div class="answered-tag mt-0.5 text-xs text-[#726C4E]" hidden>Answered</div>
         </div>
       </a>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-sm text-[#6B6B63]">Nothing is blocking.</p>
+    <p class="text-sm text-[#726C4E]">Nothing is blocking.</p>
     {% endif %}
   </section>
 
   {% if deferred %}
   <section>
-    <details id="gaps-accordion" class="border-t border-[#E4E4DF] pt-4">
-      <summary class="gaps-summary cursor-pointer select-none text-sm font-semibold text-[#171717] flex items-center gap-2">
+    <details id="gaps-accordion" class="border-t border-[#E9E2B9] pt-4">
+      <summary class="gaps-summary cursor-pointer select-none text-sm font-semibold text-[#0E100F] flex items-center gap-2">
         <svg class="gaps-chevron h-3 w-3 shrink-0" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path d="M3 4.5 L6 7.5 L9 4.5" stroke="#6B6B63" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 4.5 L6 7.5 L9 4.5" stroke="#726C4E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         {{ deferred|length }} gaps that can wait
       </summary>
-      <div id="gaps-content" class="mt-4 divide-y divide-[#EDEDE8]">
+      <div id="gaps-content" class="mt-4 divide-y divide-[#F0E9C0]">
         {% for d in deferred %}
         <a href="/decision/{{ d.id }}"
-           class="card-lift flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-8 py-3 px-2 -mx-2 hover:bg-[#F4F3ED]">
-          <p class="text-sm text-[#3D3D38]">{{ d.question }}</p>
-          <div class="shrink-0 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
+           class="card-lift flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-8 py-3 px-2 -mx-2 hover:bg-[#FFF6C7]">
+          <p class="text-sm text-[#4A4530]">{{ d.question }}</p>
+          <div class="shrink-0 text-xs tabular-nums text-[#726C4E]">{{ d.row_count|count }} transactions</div>
         </a>
         {% endfor %}
       </div>
@@ -110,7 +110,7 @@
   {% endif %}
 
   <p class="mt-16 text-sm">
-    <a href="/" class="text-[#6B6B63] hover:text-[#171717] underline underline-offset-2">
+    <a href="/" class="text-[#726C4E] hover:text-[#0E100F] underline underline-offset-2">
       Scan another pair of workbooks
     </a>
   </p>

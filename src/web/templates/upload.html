@@ -4,14 +4,14 @@
 <div class="max-w-xl mx-auto px-6 sm:px-8 py-14 sm:py-20">
 
   <h1 id="page-title" class="font-serif-display text-2xl font-semibold tracking-tight mb-2">Upload workbooks</h1>
-  <p class="text-[15px] leading-relaxed text-[#6B6B63] mb-6">
+  <p class="text-[15px] leading-relaxed text-[#726C4E] mb-6">
     Upload the source general ledger and the verified loader workbook to find every decision this migration needs, in one pass.
   </p>
 
   {% if has_previous_scan %}
-  <p class="reveal-item mb-12 border border-[#E4E4DF] bg-[#F4F3ED] px-5 py-4 text-sm text-[#3D3D38]">
+  <p class="reveal-item mb-12 border border-[#E9E2B9] bg-[#FFF6C7] px-5 py-4 text-sm text-[#4A4530]">
     A scan from earlier in this session is still available.
-    <a href="/results" class="font-medium text-[#171717] underline underline-offset-2 hover:text-[#000]">Continue reviewing those results</a>
+    <a href="/results" class="font-medium text-[#0E100F] underline underline-offset-2 hover:text-[#0B7A2C]">Continue reviewing those results</a>
     instead of scanning again.
   </p>
   {% else %}
@@ -21,12 +21,12 @@
   <form method="post" action="/scan" enctype="multipart/form-data" class="space-y-6">
     <div class="reveal-item">
       <p class="text-sm font-medium mb-2">Source general ledger</p>
-      <div class="dropzone relative border border-dashed border-[#D0D0C9] hover:border-[#171717] focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717] transition-colors">
-        <div class="dropzone-active-overlay pointer-events-none absolute inset-0 border border-solid border-[#171717] bg-[#F4F3ED] opacity-0 transition-opacity" aria-hidden="true"></div>
+      <div class="dropzone relative border border-dashed border-[#D9D2A3] hover:border-[#0E100F] focus-within:border-[#0E100F] focus-within:ring-1 focus-within:ring-[#0E100F] transition-colors">
+        <div class="dropzone-active-overlay pointer-events-none absolute inset-0 border border-solid border-[#0E100F] bg-[#FFF6C7] opacity-0 transition-opacity" aria-hidden="true"></div>
         <input
           type="file" id="source_gl" name="source_gl" accept=".xlsx" required
           class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
-        <label id="source_gl-label" for="source_gl" class="pointer-events-none block px-6 py-10 text-center text-sm text-[#6B6B63]">
+        <label id="source_gl-label" for="source_gl" class="pointer-events-none block px-6 py-10 text-center text-sm text-[#726C4E]">
           Drag and drop the .xlsx file here, or click to choose
         </label>
       </div>
@@ -34,21 +34,21 @@
 
     <div class="reveal-item">
       <p class="text-sm font-medium mb-2">Verified loader / mapping workbook</p>
-      <div class="dropzone relative border border-dashed border-[#D0D0C9] hover:border-[#171717] focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717] transition-colors">
-        <div class="dropzone-active-overlay pointer-events-none absolute inset-0 border border-solid border-[#171717] bg-[#F4F3ED] opacity-0 transition-opacity" aria-hidden="true"></div>
+      <div class="dropzone relative border border-dashed border-[#D9D2A3] hover:border-[#0E100F] focus-within:border-[#0E100F] focus-within:ring-1 focus-within:ring-[#0E100F] transition-colors">
+        <div class="dropzone-active-overlay pointer-events-none absolute inset-0 border border-solid border-[#0E100F] bg-[#FFF6C7] opacity-0 transition-opacity" aria-hidden="true"></div>
         <input
           type="file" id="loader" name="loader" accept=".xlsx" required
           class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
-        <label id="loader-label" for="loader" class="pointer-events-none block px-6 py-10 text-center text-sm text-[#6B6B63]">
+        <label id="loader-label" for="loader" class="pointer-events-none block px-6 py-10 text-center text-sm text-[#726C4E]">
           Drag and drop the .xlsx file here, or click to choose
         </label>
       </div>
     </div>
 
-    <button type="submit" id="scan-button" class="reveal-item inline-block w-full sm:w-auto border border-[#171717] bg-[#171717] px-6 py-3 text-sm font-medium text-white hover:bg-[#000] transition-colors disabled:opacity-60">
+    <button type="submit" id="scan-button" class="reveal-item inline-block w-full sm:w-auto border border-[#0AE448] bg-[#0AE448] px-6 py-3 text-sm font-semibold text-[#0E100F] hover:bg-[#09CC3F] hover:border-[#09CC3F] transition-colors disabled:opacity-60">
       Scan
     </button>
-    <p id="scan-status" hidden class="text-sm text-[#6B6B63]">
+    <p id="scan-status" hidden class="text-sm text-[#726C4E]">
       Reading both workbooks — this can take a few seconds for a large ledger.
     </p>
   </form>
@@ -103,7 +103,7 @@
     // dropzone's own border/background utility classes at runtime) sidesteps
     // a real quirk in Tailwind's CDN build: color utilities that resolve
     // through its CSS-variable-based opacity mechanism (arbitrary hex
-    // colours like border-[#171717]) can fail to take effect when applied
+    // colours like border-[#0E100F]) can fail to take effect when applied
     // to an element after the page has already rendered, even via
     // classList. Opacity has no such issue.
     var overlay = zone.querySelector(".dropzone-active-overlay");
