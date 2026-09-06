@@ -47,7 +47,7 @@
   </div>
  </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-3 max-w-3xl border-t border-b border-[#E9E2B9] divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-[#E9E2B9] mb-12">
+  <div class="reveal-item grid grid-cols-1 sm:grid-cols-3 max-w-3xl border-t border-b border-[#E9E2B9] divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-[#E9E2B9] mb-12">
     <div class="py-3 sm:py-5 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums"
            {% if d.amount is not none %}data-count-value="{{ d.amount|abs }}" data-count-decimals="2"{% endif %}>{{ d.amount_display }}</div>
@@ -63,7 +63,7 @@
     </div>
   </div>
 
-  <section class="mb-12">
+  <section class="reveal-item mb-12">
     <h2 class="text-sm font-semibold text-[#0E100F] mb-1">Evidence</h2>
     {% if d.evidence and d.evidence|length < d.row_count %}
     <p class="text-xs text-[#726C4E] mb-4">Showing {{ d.evidence|length|count }} of {{ d.row_count|count }} transactions.</p>
@@ -106,7 +106,7 @@
     {% endif %}
   </section>
 
-  <section>
+  <section class="reveal-item">
     <h2 class="text-sm font-semibold text-[#0E100F] mb-4">Answer</h2>
 
     {% if d.answer_type == "choose_account" %}
@@ -386,10 +386,18 @@
       });
     }
 
+    // The rest of the page cascades in behind the question, same as the
+    // stagger on the upload/results pages — genuinely hidden via CSS
+    // (base.html's .reveal-item) until this runs, not a JS-only opacity
+    // flip that could flash the content first.
+    if (!window.prefersReducedMotion && window.gsap) {
+      gsap.to(".reveal-item", { opacity: 1, y: 0, duration: 0.5, stagger: 0.12, ease: "power3.out", delay: 0.3 });
+    }
+
     document.querySelectorAll("[data-count-value]").forEach(function (el) {
       var value = parseFloat(el.dataset.countValue);
       var decimals = parseInt(el.dataset.countDecimals || "0", 10);
-      gsapCountUp(el, value, { decimals: decimals, duration: 1.1, delay: 0.2 });
+      gsapCountUp(el, value, { decimals: decimals, duration: 1.1, delay: 0.5 });
     });
 
     // Same magnetic treatment as the Scan button on the upload page.

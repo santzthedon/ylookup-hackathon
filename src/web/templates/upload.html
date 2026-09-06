@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-xl mx-auto px-6 sm:px-8 py-14 sm:py-20">
 
-  <h1 id="page-title" class="font-serif-display text-2xl font-semibold tracking-tight mb-2">Upload workbooks</h1>
+  <h1 id="page-title" class="reveal-title font-serif-display text-2xl font-semibold tracking-tight mb-2">Upload workbooks</h1>
   <p class="text-[15px] leading-relaxed text-[#726C4E] mb-6">
     Upload the source general ledger and the verified loader workbook to find every decision this migration needs, in one pass.
   </p>
@@ -57,17 +57,14 @@
 
 <script>
   // Headline reveal + staggered entrance for the form — the classic
-  // gsap.com landing-page treatment: split the title into words and animate
-  // each field in behind it, once, on load.
+  // gsap.com landing-page treatment: the title is genuinely invisible from
+  // first paint (see base.html's .reveal-title/.reveal-item CSS), so this
+  // animates it and the form fields *into* view rather than hiding
+  // already-visible content, which is what a gsap.from() call running late
+  // (slow CDN, script parse time) would otherwise risk flashing.
+  gsapRevealTitle("page-title");
   if (!window.prefersReducedMotion && window.gsap) {
-    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    if (window.SplitText) {
-      var titleSplit = new SplitText("#page-title", { type: "words" });
-      tl.from(titleSplit.words, { opacity: 0, y: 24, duration: 0.5, stagger: 0.06 });
-    } else {
-      tl.from("#page-title", { opacity: 0, y: 24, duration: 0.5 });
-    }
-    tl.from(".reveal-item", { opacity: 0, y: 16, duration: 0.45, stagger: 0.1 }, "-=0.2");
+    gsap.to(".reveal-item", { opacity: 1, y: 0, duration: 0.55, stagger: 0.1, ease: "power3.out", delay: 0.25 });
   }
 
   // Magnetic button: a small, deliberate nod to gsap.com's own hover

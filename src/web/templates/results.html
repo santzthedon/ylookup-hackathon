@@ -35,7 +35,7 @@
 <div class="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 overflow-x-hidden">
 
   <header class="mb-10 sm:mb-12">
-    <h1 id="page-title" class="font-serif-display text-2xl font-semibold tracking-tight inline-block">Scan results</h1>
+    <h1 id="page-title" class="reveal-title font-serif-display text-2xl font-semibold tracking-tight inline-block">Scan results</h1>
     <svg width="130" height="10" viewBox="0 0 130 10" fill="none" class="block mt-1" aria-hidden="true">
       <path id="title-underline" d="M2 5 Q 65 9 128 5" stroke="#0B7A2C" stroke-width="2" stroke-linecap="round"/>
     </svg>
@@ -43,19 +43,19 @@
   </header>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-[#E9E2B9] divide-y sm:divide-y-0 lg:divide-x divide-[#E9E2B9] mb-12 sm:mb-16">
-    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+    <div class="reveal-item min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums text-[#0B7A2C]" data-count-value="{{ summary.blocking }}">{{ summary.blocking|count }}</div>
       <div class="text-xs text-[#726C4E] sm:mt-1">Blocking</div>
     </div>
-    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+    <div class="reveal-item min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.deferred }}">{{ summary.deferred|count }}</div>
       <div class="text-xs text-[#726C4E] sm:mt-1">Can wait</div>
     </div>
-    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+    <div class="reveal-item min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.rows_blocked }}">{{ summary.rows_blocked|count }}</div>
       <div class="text-xs text-[#726C4E] sm:mt-1">Transactions held up</div>
     </div>
-    <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
+    <div class="reveal-item min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
       <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.value_blocked }}" data-count-decimals="2">{{ summary.value_blocked|money }}</div>
       <div class="text-xs text-[#726C4E] sm:mt-1">Value held up</div>
     </div>
@@ -118,35 +118,35 @@
 </div>
 
 <script>
-  // Headline reveal to match the other pages, the drawn underline (DrawSVG —
-  // one of GSAP's own signature showcase effects), and a count-up on every
-  // headline figure. Each counter starts from the real server-rendered text,
-  // so a slow or blocked CDN never hides the actual numbers.
+  // Headline reveal to match the other pages (see base.html's
+  // gsapRevealTitle — the title is genuinely invisible via CSS from first
+  // paint, not hidden by a JS call that might run late enough to flash it),
+  // the drawn underline (DrawSVG — one of GSAP's own signature showcase
+  // effects), the stat tiles cascading in behind it, and a count-up on
+  // every headline figure. Each counter starts from the real
+  // server-rendered text, so a slow or blocked CDN never hides the actual
+  // numbers.
+  gsapRevealTitle("page-title");
   if (!window.prefersReducedMotion && window.gsap) {
-    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    if (window.SplitText) {
-      var titleSplit = new SplitText("#page-title", { type: "words" });
-      tl.from(titleSplit.words, { opacity: 0, y: 24, duration: 0.5, stagger: 0.06 });
-    } else {
-      tl.from("#page-title", { opacity: 0, y: 24, duration: 0.5 });
-    }
     if (window.DrawSVGPlugin) {
-      tl.fromTo("#title-underline", { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.7, ease: "power2.inOut" }, "-=0.15");
+      gsap.fromTo("#title-underline", { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.7, ease: "power2.inOut", delay: 0.35 });
     }
+    gsap.to(".reveal-item", { opacity: 1, y: 0, duration: 0.55, stagger: 0.08, ease: "power3.out", delay: 0.3 });
   }
 
   document.querySelectorAll("[data-count-value]").forEach(function (el) {
     var value = parseFloat(el.dataset.countValue);
     var decimals = parseInt(el.dataset.countDecimals || "0", 10);
-    gsapCountUp(el, value, { decimals: decimals, duration: 1.2, delay: 0.15 });
+    gsapCountUp(el, value, { decimals: decimals, duration: 1.2, delay: 0.4 });
   });
 
   // Blocking cards reveal as they scroll into view, batched so a long list
   // doesn't fire fifty separate triggers — ScrollTrigger.batch is GSAP's own
-  // pattern for exactly this. Cards are never hidden unless gsap actually
-  // loaded, so a blocked CDN can never leave real decisions invisible.
+  // pattern for exactly this. Their hidden starting state comes from
+  // base.html's CSS (.reveal-card), not a gsap.set() call here, so cards
+  // already in the initial viewport can't flash visible-then-hidden before
+  // ScrollTrigger evaluates them.
   if (!window.prefersReducedMotion && window.gsap && window.ScrollTrigger) {
-    gsap.set(".reveal-card", { opacity: 0, y: 24 });
     ScrollTrigger.batch(".reveal-card", {
       start: "top 92%",
       once: true,

@@ -47,6 +47,28 @@
         },
       });
     };
+
+    // Headline word-reveal, shared by every page's #page-title except the
+    // decision page (which uses a scramble-text reveal on already-visible
+    // text instead — see decision.html). Splits into words and animates
+    // them up from the CSS-hidden state declared below, so "the words are
+    // not already there" is true from first paint, not a JS afterthought.
+    window.gsapRevealTitle = function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (window.prefersReducedMotion || !window.gsap) {
+        el.style.visibility = "visible";
+        return;
+      }
+      if (window.SplitText) {
+        var split = new SplitText(el, { type: "words" });
+        el.style.visibility = "visible";
+        gsap.from(split.words, { opacity: 0, y: 28, duration: 0.7, stagger: 0.08, ease: "power3.out" });
+      } else {
+        el.style.visibility = "visible";
+        gsap.from(el, { opacity: 0, y: 28, duration: 0.7, ease: "power3.out" });
+      }
+    };
   </script>
   <style>
     /* Reserved for the things this tool exists to show: the question being
@@ -56,6 +78,15 @@
     .font-serif-display {
       font-family: "Source Serif 4", Georgia, Cambria, "Times New Roman", Times, serif;
       font-optical-sizing: auto;
+    }
+
+    /* Entrance reveal, hidden from the very first paint via CSS (not a JS
+       call that might run late enough to flash the content first). Scoped
+       to no-preference so a reduced-motion visitor never has anything
+       hidden behind a media query they didn't ask to depend on JS. */
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal-title { visibility: hidden; }
+      .reveal-item, .reveal-card { opacity: 0; transform: translateY(20px); }
     }
   </style>
 </head>
@@ -73,5 +104,35 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  <script>
+    // Guarantees .reveal-title/.reveal-item content is never stuck hidden if
+    // gsap fails to load at all (blocked CDN, network issue, script error) --
+    // this runs unconditionally, independent of whether any of the
+    // per-page reveal scripts above ever fired. If they already ran, this
+    // is a harmless no-op; if gsap never loaded, this rescues visibility
+    // after a bounded wait instead of leaving the page blank forever.
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        document.querySelectorAll(".reveal-title").forEach(function (el) {
+          el.style.visibility = "visible";
+        });
+        document.querySelectorAll(".reveal-item").forEach(function (el) {
+          el.style.opacity = "1";
+          el.style.transform = "none";
+        });
+        // .reveal-card (the results-page blocking cards) is deliberately
+        // scroll-triggered via ScrollTrigger.batch when gsap loaded
+        // correctly, so it's only force-revealed here as a fallback for a
+        // genuinely failed load -- not as a blanket timer, which would
+        // otherwise defeat the scroll reveal for anything below the fold.
+        if (!window.gsap || !window.ScrollTrigger) {
+          document.querySelectorAll(".reveal-card").forEach(function (el) {
+            el.style.opacity = "1";
+            el.style.transform = "none";
+          });
+        }
+      }, 1200);
+    });
+  </script>
 </body>
 </html>
