@@ -9,6 +9,29 @@
 {% endblock %}
 
 {% block content %}
+<style>
+  /* A small, purposeful lift on the decision cards — reinforces that each
+     row is a clickable unit without leaning on gradients or shadow-heavy
+     "glassmorphism". Transform-only, so it never affects layout/reflow. */
+  .card-lift { transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.15s ease; }
+  @media (hover: hover) {
+    .card-lift:hover { transform: translateY(-2px); box-shadow: 0 4px 14px -6px rgba(23, 23, 23, 0.18); }
+  }
+
+  /* "Gaps that can wait" accordion: native marker replaced with a chevron
+     that flips with the open state, driven off the real [open] attribute so
+     it stays correct even if JS below never runs. */
+  .gaps-summary { list-style: none; }
+  .gaps-summary::-webkit-details-marker { display: none; }
+  .gaps-chevron { transition: transform 0.2s ease; }
+  details[open] > .gaps-summary .gaps-chevron { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) {
+    .gaps-chevron { transition: none; }
+  }
+  /* Content wrapper animated open/closed by GSAP below; overflow is only
+     set on the element while a tween is in flight (see script), so a
+     focused link's outline is never clipped at rest. */
+</style>
 <div class="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 overflow-x-hidden">
 
   <header class="mb-10 sm:mb-12">
@@ -49,7 +72,7 @@
     <div id="blocking-cards" class="space-y-3">
       {% for d in blocking %}
       <a href="/decision/{{ d.id }}" data-decision-id="{{ d.id }}"
-         class="reveal-card flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#F4F3ED] transition-colors">
+         class="reveal-card card-lift flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#F4F3ED] transition-colors">
         <p class="text-[15px] leading-snug text-[#171717]">{{ d.question }}</p>
         <div class="shrink-0 text-left sm:text-right">
           <div class="font-serif-display tabular-nums text-lg font-medium leading-tight">{{ d.amount_display }}</div>
@@ -66,14 +89,17 @@
 
   {% if deferred %}
   <section>
-    <details class="border-t border-[#E4E4DF] pt-4">
-      <summary class="cursor-pointer select-none text-sm font-semibold text-[#171717]">
+    <details id="gaps-accordion" class="border-t border-[#E4E4DF] pt-4">
+      <summary class="gaps-summary cursor-pointer select-none text-sm font-semibold text-[#171717] flex items-center gap-2">
+        <svg class="gaps-chevron h-3 w-3 shrink-0" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 4.5 L6 7.5 L9 4.5" stroke="#6B6B63" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         {{ deferred|length }} gaps that can wait
       </summary>
-      <div class="mt-4 divide-y divide-[#EDEDE8]">
+      <div id="gaps-content" class="mt-4 divide-y divide-[#EDEDE8]">
         {% for d in deferred %}
         <a href="/decision/{{ d.id }}"
-           class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-8 py-3 px-2 -mx-2 hover:bg-[#F4F3ED]">
+           class="card-lift flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-8 py-3 px-2 -mx-2 hover:bg-[#F4F3ED]">
           <p class="text-sm text-[#3D3D38]">{{ d.question }}</p>
           <div class="shrink-0 text-xs tabular-nums text-[#6B6B63]">{{ d.row_count|count }} transactions</div>
         </a>
@@ -129,6 +155,83 @@
       },
     });
   }
+
+  // "Gaps that can wait" accordion: a native <details> toggle snaps open/
+  // closed with no transition, which reads as a jump cut against everything
+  // else on this page. Intercept the summary's click (fired for mouse *and*
+  // keyboard activation alike, so Enter/Space on the summary still works
+  // exactly as before) and animate the height instead, while leaving the
+  // real [open] attribute — and therefore default a11y/semantics — in
+  // charge of the end state.
+  (function () {
+    var details = document.getElementById("gaps-accordion");
+    if (!details) return;
+    var summary = details.querySelector(".gaps-summary");
+    var content = document.getElementById("gaps-content");
+    var isAnimating = false;
+
+    if (window.prefersReducedMotion || !window.gsap) {
+      // Native toggle is already instant and correct; nothing to add.
+      return;
+    }
+
+    summary.addEventListener("click", function (event) {
+      if (isAnimating) {
+        event.preventDefault();
+        return;
+      }
+      event.preventDefault();
+      if (details.open) {
+        closeContent();
+      } else {
+        openContent();
+      }
+    });
+
+    function openContent() {
+      details.open = true;
+      var targetHeight = content.scrollHeight;
+      isAnimating = true;
+      content.style.overflow = "hidden";
+      gsap.fromTo(
+        content,
+        { height: 0, opacity: 0 },
+        {
+          height: targetHeight,
+          opacity: 1,
+          duration: 0.4,
+          ease: "power2.out",
+          onComplete: function () {
+            content.style.height = "auto";
+            content.style.overflow = "";
+            isAnimating = false;
+          },
+        }
+      );
+    }
+
+    function closeContent() {
+      var startHeight = content.scrollHeight;
+      isAnimating = true;
+      content.style.overflow = "hidden";
+      gsap.fromTo(
+        content,
+        { height: startHeight, opacity: 1 },
+        {
+          height: 0,
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.in",
+          onComplete: function () {
+            details.open = false;
+            content.style.overflow = "";
+            content.style.height = "";
+            isAnimating = false;
+          },
+        }
+      );
+    }
+  })();
 </script>
 
 <script>

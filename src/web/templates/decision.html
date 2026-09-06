@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 {% block title %}{{ d.id }} — migration decision review{% endblock %}
 {% block content %}
+<style>
+  /* Same treatment as the results-page decision cards, for the answer
+     options here — a small, purposeful lift to reinforce what's clickable. */
+  .card-lift { transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.15s ease; }
+  @media (hover: hover) {
+    .card-lift:hover { transform: translateY(-2px); box-shadow: 0 4px 14px -6px rgba(23, 23, 23, 0.18); }
+  }
+</style>
 <div class="max-w-7xl mx-auto px-5 sm:px-8 py-10 sm:py-14 overflow-x-hidden">
 
  <div class="max-w-3xl">
   <p class="mb-10 text-sm">
-    <a href="/" class="text-[#6B6B63] hover:text-[#171717] underline underline-offset-2">Back to results</a>
+    <a href="/results" class="text-[#6B6B63] hover:text-[#171717] underline underline-offset-2">Back to results</a>
   </p>
 
   <div class="mb-5 flex items-center justify-between gap-4">
@@ -63,7 +71,7 @@
     <div class="mb-4"></div>
     {% endif %}
     {% if d.evidence %}
-    <div class="overflow-x-auto border border-[#E4E4DF]">
+    <div class="overflow-x-auto border border-[#E4E4DF]" tabindex="0" role="region" aria-label="Evidence transactions, scrollable">
       <table class="text-sm border-collapse">
         <thead>
           <tr class="bg-[#F4F3ED] border-b border-[#E4E4DF]">
@@ -80,9 +88,9 @@
           <tr class="border-b border-[#EDEDE8] last:border-b-0">
             {% for key, value in row.items() %}
             <td class="px-3 py-3 min-w-[7rem] max-w-[9rem] align-top {{ 'text-right' if value is number else 'text-left' }}"
-                title="{{ value|money if value is number else value }}">
+                title="{{ value|signed_money if value is number else value }}">
               {% if value is number %}
-              <span class="tabular-nums whitespace-nowrap">{{ value|money }}</span>
+              <span class="tabular-nums whitespace-nowrap">{{ value|signed_money }}</span>
               {% else %}
               <div class="line-clamp-2">{{ value }}</div>
               {% endif %}
@@ -107,7 +115,7 @@
       <input
         type="text"
         id="account-search"
-        class="combobox-input w-full border border-[#E4E4DF] px-4 py-3 text-[15px] bg-white focus:outline-none focus:border-[#171717]"
+        class="combobox-input w-full border border-[#E4E4DF] px-4 py-3 text-[15px] bg-white focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717]"
         placeholder="Search {{ d.options|length }} accounts…"
         role="combobox"
         aria-expanded="false"
@@ -121,7 +129,7 @@
     <fieldset class="max-w-md space-y-2 border-0 p-0 m-0">
       <legend class="sr-only">Choose one</legend>
       {% for option in d.options %}
-      <label class="flex items-center gap-3 border border-[#E4E4DF] px-4 py-3 cursor-pointer hover:bg-[#F4F3ED]">
+      <label class="card-lift flex items-center gap-3 border border-[#E4E4DF] px-4 py-3 cursor-pointer hover:bg-[#F4F3ED]">
         <input type="radio" name="answer" value="{{ option }}">
         <span class="text-[15px]">{{ option }}</span>
       </label>
@@ -193,6 +201,7 @@
       }
 
       function render(filtered) {
+        var wasHidden = list.classList.contains("hidden");
         list.innerHTML = "";
         currentItems = [];
         currentValues = filtered.slice(0, 50);
@@ -214,6 +223,15 @@
         list.classList.toggle("hidden", !hasItems);
         input.setAttribute("aria-expanded", hasItems ? "true" : "false");
         activeIndex = -1;
+
+        // Purely visual: a short fade/slide the first time this listbox
+        // opens (not on every keystroke re-render while it's already open,
+        // which would flicker on each character typed). Never touches the
+        // hidden-class logic above, so keyboard nav and ARIA state are
+        // unaffected either way.
+        if (!window.prefersReducedMotion && window.gsap && wasHidden && hasItems) {
+          gsap.fromTo(list, { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.18, ease: "power2.out" });
+        }
       }
 
       function matching() {
@@ -246,9 +264,19 @@
           event.preventDefault();
           setActive(Math.max(activeIndex - 1, 0));
         } else if (event.key === "Enter") {
-          if (activeIndex >= 0 && currentValues[activeIndex] !== undefined) {
+          // Typing a full account name and pressing Enter without ever
+          // touching an arrow key is the single most natural way to use a
+          // search box. Falling through to "do nothing" here would leave
+          // the visible text looking chosen while the real (hidden) answer
+          // stayed empty -- a silent dead end. If nothing is highlighted,
+          // Enter picks the highlighted item if there is one, and otherwise
+          // the sole remaining match; with more than one match and nothing
+          // highlighted, there's no single obvious choice, so it's left to
+          // arrow keys to disambiguate.
+          var index = activeIndex >= 0 ? activeIndex : (currentValues.length === 1 ? 0 : -1);
+          if (index >= 0 && currentValues[index] !== undefined) {
             event.preventDefault();
-            choose(currentValues[activeIndex]);
+            choose(currentValues[index]);
           }
         } else if (event.key === "Escape") {
           closeList();
@@ -337,7 +365,7 @@
           return;
         }
 
-        window.location.href = nextId ? "/decision/" + nextId : "/";
+        window.location.href = nextId ? "/decision/" + nextId : "/results";
       });
     })();
   </script>

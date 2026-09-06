@@ -4,14 +4,25 @@
 <div class="max-w-xl mx-auto px-6 sm:px-8 py-14 sm:py-20">
 
   <h1 id="page-title" class="font-serif-display text-2xl font-semibold tracking-tight mb-2">Upload workbooks</h1>
-  <p class="text-[15px] leading-relaxed text-[#6B6B63] mb-12">
+  <p class="text-[15px] leading-relaxed text-[#6B6B63] mb-6">
     Upload the source general ledger and the verified loader workbook to find every decision this migration needs, in one pass.
   </p>
+
+  {% if has_previous_scan %}
+  <p class="reveal-item mb-12 border border-[#E4E4DF] bg-[#F4F3ED] px-5 py-4 text-sm text-[#3D3D38]">
+    A scan from earlier in this session is still available.
+    <a href="/results" class="font-medium text-[#171717] underline underline-offset-2 hover:text-[#000]">Continue reviewing those results</a>
+    instead of scanning again.
+  </p>
+  {% else %}
+  <div class="mb-12"></div>
+  {% endif %}
 
   <form method="post" action="/scan" enctype="multipart/form-data" class="space-y-6">
     <div class="reveal-item">
       <p class="text-sm font-medium mb-2">Source general ledger</p>
       <div class="dropzone relative border border-dashed border-[#D0D0C9] hover:border-[#171717] focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717] transition-colors">
+        <div class="dropzone-active-overlay pointer-events-none absolute inset-0 border border-solid border-[#171717] bg-[#F4F3ED] opacity-0 transition-opacity" aria-hidden="true"></div>
         <input
           type="file" id="source_gl" name="source_gl" accept=".xlsx" required
           class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
@@ -24,6 +35,7 @@
     <div class="reveal-item">
       <p class="text-sm font-medium mb-2">Verified loader / mapping workbook</p>
       <div class="dropzone relative border border-dashed border-[#D0D0C9] hover:border-[#171717] focus-within:border-[#171717] focus-within:ring-1 focus-within:ring-[#171717] transition-colors">
+        <div class="dropzone-active-overlay pointer-events-none absolute inset-0 border border-solid border-[#171717] bg-[#F4F3ED] opacity-0 transition-opacity" aria-hidden="true"></div>
         <input
           type="file" id="loader" name="loader" accept=".xlsx" required
           class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
@@ -78,11 +90,48 @@
 <script>
   // Dropping a file directly onto a native <input type="file"> already works
   // in every evergreen browser and sets .files itself — no custom drag/drop
-  // handling needed. This only updates the visible label after a choice,
-  // whichever way it was made (click, keyboard, or drop).
+  // handling needed for the drop itself. What's missing without extra JS is
+  // any visual acknowledgement *while* a file is being dragged over the
+  // zone — the input stays invisibly on top, so a real drag currently gives
+  // zero feedback until the user lets go. That's the gap this closes.
   document.querySelectorAll('input[type="file"]').forEach(function (input) {
     var label = document.getElementById(input.id + "-label");
     var zone = input.closest(".dropzone");
+    // A full-bleed sibling with the "active" border/background already
+    // baked in as ordinary Tailwind classes, sitting at opacity-0 until a
+    // drag is over it. Toggling *opacity* (rather than swapping the
+    // dropzone's own border/background utility classes at runtime) sidesteps
+    // a real quirk in Tailwind's CDN build: color utilities that resolve
+    // through its CSS-variable-based opacity mechanism (arbitrary hex
+    // colours like border-[#171717]) can fail to take effect when applied
+    // to an element after the page has already rendered, even via
+    // classList. Opacity has no such issue.
+    var overlay = zone.querySelector(".dropzone-active-overlay");
+
+    function setDragActive(active) {
+      overlay.style.opacity = active ? "1" : "0";
+      if (!window.prefersReducedMotion && window.gsap) {
+        gsap.to(zone, { scale: active ? 1.015 : 1, duration: 0.25, ease: "power2.out" });
+      }
+    }
+
+    input.addEventListener("dragenter", function (event) {
+      event.preventDefault();
+      setDragActive(true);
+    });
+    input.addEventListener("dragover", function (event) {
+      // Required for the browser to treat this as a valid drop target at
+      // all — without it, `drop` never fires.
+      event.preventDefault();
+    });
+    input.addEventListener("dragleave", function (event) {
+      event.preventDefault();
+      setDragActive(false);
+    });
+    input.addEventListener("drop", function () {
+      setDragActive(false);
+    });
+
     input.addEventListener("change", function () {
       if (input.files.length) {
         label.textContent = input.files[0].name;

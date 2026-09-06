@@ -16,3 +16,6 @@ __pycache__/
 
 # Editor / OS noise.
 .DS_Store
+
+# Claude Code worktrees (used for parallel-agent workflows).
+.claude/
