@@ -12,25 +12,28 @@
 <div class="max-w-4xl mx-auto px-5 sm:px-8 py-10 sm:py-14 overflow-x-hidden">
 
   <header class="mb-10 sm:mb-12">
-    <h1 class="font-serif-display text-2xl font-semibold tracking-tight">Scan results</h1>
-    <p class="mt-1 text-sm text-[#6B6B63]">Every decision found in one pass over the source data.</p>
+    <h1 id="page-title" class="font-serif-display text-2xl font-semibold tracking-tight inline-block">Scan results</h1>
+    <svg width="130" height="10" viewBox="0 0 130 10" fill="none" class="block mt-1" aria-hidden="true">
+      <path id="title-underline" d="M2 5 Q 65 9 128 5" stroke="#9A3412" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <p class="mt-2 text-sm text-[#6B6B63]">Every decision found in one pass over the source data.</p>
   </header>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-[#E4E4DF] divide-y sm:divide-y-0 lg:divide-x divide-[#E4E4DF] mb-12 sm:mb-16">
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums text-[#9A3412]">{{ summary.blocking|count }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums text-[#9A3412]" data-count-value="{{ summary.blocking }}">{{ summary.blocking|count }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Blocking</div>
     </div>
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ summary.deferred|count }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.deferred }}">{{ summary.deferred|count }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Can wait</div>
     </div>
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ summary.rows_blocked|count }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.rows_blocked }}">{{ summary.rows_blocked|count }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Transactions held up</div>
     </div>
     <div class="min-w-0 py-4 sm:py-6 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ summary.value_blocked|money }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ summary.value_blocked }}" data-count-decimals="2">{{ summary.value_blocked|money }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Value held up</div>
     </div>
   </div>
@@ -46,7 +49,7 @@
     <div id="blocking-cards" class="space-y-3">
       {% for d in blocking %}
       <a href="/decision/{{ d.id }}" data-decision-id="{{ d.id }}"
-         class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#F4F3ED] transition-colors">
+         class="reveal-card flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 sm:gap-8 border border-[#E4E4DF] border-l-2 border-l-[#9A3412] px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#F4F3ED] transition-colors">
         <p class="text-[15px] leading-snug text-[#171717]">{{ d.question }}</p>
         <div class="shrink-0 text-left sm:text-right">
           <div class="font-serif-display tabular-nums text-lg font-medium leading-tight">{{ d.amount_display }}</div>
@@ -87,6 +90,46 @@
   </p>
 
 </div>
+
+<script>
+  // Headline reveal to match the other pages, the drawn underline (DrawSVG —
+  // one of GSAP's own signature showcase effects), and a count-up on every
+  // headline figure. Each counter starts from the real server-rendered text,
+  // so a slow or blocked CDN never hides the actual numbers.
+  if (!window.prefersReducedMotion && window.gsap) {
+    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    if (window.SplitText) {
+      var titleSplit = new SplitText("#page-title", { type: "words" });
+      tl.from(titleSplit.words, { opacity: 0, y: 24, duration: 0.5, stagger: 0.06 });
+    } else {
+      tl.from("#page-title", { opacity: 0, y: 24, duration: 0.5 });
+    }
+    if (window.DrawSVGPlugin) {
+      tl.fromTo("#title-underline", { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.7, ease: "power2.inOut" }, "-=0.15");
+    }
+  }
+
+  document.querySelectorAll("[data-count-value]").forEach(function (el) {
+    var value = parseFloat(el.dataset.countValue);
+    var decimals = parseInt(el.dataset.countDecimals || "0", 10);
+    gsapCountUp(el, value, { decimals: decimals, duration: 1.2, delay: 0.15 });
+  });
+
+  // Blocking cards reveal as they scroll into view, batched so a long list
+  // doesn't fire fifty separate triggers — ScrollTrigger.batch is GSAP's own
+  // pattern for exactly this. Cards are never hidden unless gsap actually
+  // loaded, so a blocked CDN can never leave real decisions invisible.
+  if (!window.prefersReducedMotion && window.gsap && window.ScrollTrigger) {
+    gsap.set(".reveal-card", { opacity: 0, y: 24 });
+    ScrollTrigger.batch(".reveal-card", {
+      start: "top 92%",
+      once: true,
+      onEnter: function (batch) {
+        gsap.to(batch, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: "power2.out" });
+      },
+    });
+  }
+</script>
 
 <script>
   // Answers are saved client side from the decision page (see decision.html) —

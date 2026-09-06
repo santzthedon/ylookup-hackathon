@@ -29,7 +29,7 @@
     </div>
   </div>
 
-  <h1 class="font-serif-display text-2xl font-semibold leading-snug tracking-tight mb-6">{{ d.question }}</h1>
+  <h1 id="page-title" class="font-serif-display text-2xl font-semibold leading-snug tracking-tight mb-6">{{ d.question }}</h1>
 
   <p class="text-[15px] leading-relaxed text-[#3D3D38] mb-8">{{ d.detail }}</p>
 
@@ -41,15 +41,16 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-3 max-w-3xl border-t border-b border-[#E4E4DF] divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-[#E4E4DF] mb-12">
     <div class="py-3 sm:py-5 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ d.amount_display }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums"
+           {% if d.amount is not none %}data-count-value="{{ d.amount|abs }}" data-count-decimals="2"{% endif %}>{{ d.amount_display }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Amount</div>
     </div>
     <div class="py-3 sm:py-5 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ d.row_count|count }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ d.row_count }}">{{ d.row_count|count }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Transactions</div>
     </div>
     <div class="py-3 sm:py-5 px-2 sm:px-6 flex flex-row items-baseline justify-between sm:flex-col sm:items-end sm:justify-normal">
-      <div class="font-serif-display text-xl font-semibold tabular-nums">{{ d.entities_affected|count }}</div>
+      <div class="font-serif-display text-xl font-semibold tabular-nums" data-count-value="{{ d.entities_affected }}">{{ d.entities_affected|count }}</div>
       <div class="text-xs text-[#6B6B63] sm:mt-1">Funds affected</div>
     </div>
   </div>
@@ -339,6 +340,43 @@
         window.location.href = nextId ? "/decision/" + nextId : "/";
       });
     })();
+  </script>
+
+  <script>
+    // The question decodes into place — ScrambleText is GSAP's own showcase
+    // effect for exactly this kind of reveal. It tweens the element's own
+    // text content directly (no per-character DOM split), so it stays fast
+    // even for a full sentence, and the underlying question used for saving
+    // answers is always read from the server-rendered Jinja value below, not
+    // from the DOM — the animation never risks corrupting real data.
+    if (!window.prefersReducedMotion && window.gsap && window.ScrambleTextPlugin) {
+      var titleEl = document.getElementById("page-title");
+      var finalText = titleEl.textContent;
+      gsap.to(titleEl, {
+        duration: 1,
+        scrambleText: { text: finalText, chars: "upperAndLowerCase", revealDelay: 0.15, speed: 0.35 },
+      });
+    }
+
+    document.querySelectorAll("[data-count-value]").forEach(function (el) {
+      var value = parseFloat(el.dataset.countValue);
+      var decimals = parseInt(el.dataset.countDecimals || "0", 10);
+      gsapCountUp(el, value, { decimals: decimals, duration: 1.1, delay: 0.2 });
+    });
+
+    // Same magnetic treatment as the Scan button on the upload page.
+    if (!window.prefersReducedMotion && window.gsap) {
+      var magnet = document.getElementById("save-button");
+      magnet.addEventListener("mousemove", function (event) {
+        var rect = magnet.getBoundingClientRect();
+        var x = event.clientX - rect.left - rect.width / 2;
+        var y = event.clientY - rect.top - rect.height / 2;
+        gsap.to(magnet, { x: x * 0.25, y: y * 0.5, duration: 0.3, ease: "power2.out" });
+      });
+      magnet.addEventListener("mouseleave", function () {
+        gsap.to(magnet, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.4)" });
+      });
+    }
   </script>
 
 </div>
